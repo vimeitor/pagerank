@@ -1,112 +1,119 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
 #include <vector>
 
-struct Airport {
-	int id;
-	std::string name;
-	std::string city;
-	std::string country;
-	std::string iata;
-	std::string icao;
+struct Node {
+	std::vector<std::string> incoming;
+	int weight;
 };
 
-struct Route {
-	std::string airline_code;
-	int OF_code;
-	std::string origin;
-	int OF_origin;
-	std::string destination;
-};
-
-Airport create_airport(std::string &line)
+void read_airports(std::vector<std::string> &nodelist,
+				   std::map<std::string, Node> &nodemap)
 {
-	Airport a;
-	int index = 0;
-	std::stringstream ss(line);
-	std::string field;
-	while (std::getline(ss, field, ',') && index < 6) {
-		if (field == "\\N") {
-			index++;
-			continue;
-		}
-		if (index == 0) {
-			int id = std::stoi(field);
-			a.id = id;
-		} else {
-			/* We remove the quotes. */
-			std::string sub = field.substr(1, field.length()-2);
-			if (index == 1)
-				a.name = sub;
-			else if (index == 2)
-				a.city = sub;
-			else if (index == 3)
-				a.country = sub;
-			else if (index == 4)
-				a.iata = sub;
-			else
-				a.icao = sub;
-		}
-		index++;
+	std::ifstream file("airports.txt");
+	if (!file) {
+		std::cout << "error: can't read airports" << std::endl;
+		std::exit(1);
 	}
-	return a;
+
+	std::string line;
+	while (std::getline(file, line)) {
+		std::vector<std::string> fields;
+		std::stringstream ss(line);
+		std::string field;
+		while (std::getline(ss, field, ','))
+			fields.push_back(field);
+
+		if (fields[4].length() != 5)
+			continue;
+
+		Node e;
+		e.weight = 0;
+
+		std::string code = fields[4].substr(1, fields[4].length() - 2);
+		nodemap[code] = e;
+		nodelist.push_back(code);
+	}
 }
 
-Route create_route(std::string &line)
+void read_routes(std::vector<std::string> &nodelist,
+				 std::map<std::string, Node> &nodemap)
 {
-	Route r;
-	int index = 0;
-	std::stringstream ss(line);
-	std::string field;
-	while (std::getline(ss, field, ',') && index < 5) {
-		if (field == "\\N") {
-			index++;
-			continue;
-		}
-		if (index == 1 || index == 3) {
-			int id = std::stoi(field);
-			if (index == 1)
-				r.OF_code = id;
-			else
-				r.OF_origin = id;
-		} else {
-			if (field.length() < 2) {
-				index++;
-				continue;
-			}
-			/* We remove the quotes. */
-			std::string sub = field.substr(1, field.length()-2);
-			if (index == 0)
-				r.airline_code = sub;
-			else if (index == 2)
-				r.origin = sub;
-			else if (index == 4)
-				r.destination = sub;
-		}
-		index++;
+	std::ifstream file("routes.txt");
+	if (!file) {
+		std::cout << "error: can't read routes" << std::endl;
+		std::exit(1);
 	}
-	return r;
+
+	std::string line;
+	while (std::getline(file, line)) {
+		std::vector<std::string> fields;
+		std::stringstream ss(line);
+		std::string field;
+		while (std::getline(ss, field, ','))
+			fields.push_back(field);
+
+		if (fields[2].length() != 3 || fields[4].length() != 3)
+			continue;
+
+		std::string origin = fields[2];
+		std::string dest  = fields[4];
+
+		/* std::cout << origin << dest << std::endl; */
+
+		nodemap[dest].incoming.push_back(origin);
+		nodemap[origin].weight++;
+	}
+}
+
+std::map<std::string, double> pagerank(std::vector<std::string> &nodelist,
+									   std::map<std::string, Node> &nodemap)
+{
+	int n = nodelist.size();
+	double dfactor = 0.85;
+	int it = 100;
+
+	std::map<std::string, double> prev_pagerank;
+	for (auto e : nodelist)
+		prev_pagerank[e] = 1 / n;
+	std::map<std::string, double> pagerank;
+
+	for (int i = 0; i < it; i++) {
+		/* For each node in the graph, we compute its new page rank by adding
+		 * the previous page rank of its incoming nodes divided by the weight of
+		 * each incoming node. */
+		for (int j = 0; j < nodelist.size(); j++) {
+			double pr = 0.0;
+			std::string code = nodelist[j];
+			Node e = nodemap[code];
+			for (int k = 0; k < e.incoming.size(); k++) {
+				std::string inc = e.incoming[k];
+				pr += prev_pagerank[inc] / nodemap[inc].weight;
+			}
+			pagerank[code] = dfactor * pr + (1 - dfactor) / n;
+		}
+		prev_pagerank = pagerank;
+	}
+	return pagerank;
 }
 
 int main()
 {
-	std::ifstream airport_file("airports.txt");
-	std::ifstream route_file("routes.txt");
-	if (!airport_file || !route_file) {
-		std::cout << "error: can't read files" << std::endl;
-		return EXIT_FAILURE;
-	}
+	std::vector<std::string> nodelist;
+	std::map<std::string, Node> nodemap;
 
-	std::vector<Airport> airports;
-	std::vector<Route> routes;
-	std::string line;
-	while (std::getline(airport_file, line))
-		airports.push_back(create_airport(line));
-	while (std::getline(route_file, line))
-		routes.push_back(create_route(line));
+	read_airports(nodelist, nodemap);
+	read_routes(nodelist, nodemap);
+
+	auto pr = pagerank(nodelist, nodemap);
+	for (int i = 0; i < nodelist.size(); i++) {
+		auto e = nodelist[i];
+		std::cout << e << ": " << pr[e] << std::endl;
+	}
 
 	return 0;
 }

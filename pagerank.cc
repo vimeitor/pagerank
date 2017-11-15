@@ -7,8 +7,8 @@
 #include <vector>
 
 struct Node {
-	std::vector<std::string> incoming;
-	int weight;
+	std::map<std::string, int> incoming;
+	int weight = 0;
 };
 
 void read_airports(std::vector<std::string> &nodelist,
@@ -31,12 +31,12 @@ void read_airports(std::vector<std::string> &nodelist,
 		if (fields[4].length() != 5)
 			continue;
 
-		Node e;
-		e.weight = 0;
-
 		std::string code = fields[4].substr(1, fields[4].length() - 2);
-		nodemap[code] = e;
 		nodelist.push_back(code);
+
+		/* We initialize it so we can later make sure the edges have nodes
+		 * existing in airports.txt. */
+		nodemap[code] = Node();
 	}
 }
 
@@ -57,16 +57,15 @@ void read_routes(std::vector<std::string> &nodelist,
 		while (std::getline(ss, field, ','))
 			fields.push_back(field);
 
-		if (fields[2].length() != 3 || fields[4].length() != 3)
+		std::string from = fields[2];
+		std::string to  = fields[4];
+
+		if (from.size() != 3 || to.size() != 3 ||
+			!nodemap.count(from) || !nodemap.count(to))
 			continue;
 
-		std::string origin = fields[2];
-		std::string dest  = fields[4];
-
-		/* std::cout << origin << dest << std::endl; */
-
-		nodemap[dest].incoming.push_back(origin);
-		nodemap[origin].weight++;
+		nodemap[to].incoming[from]++;
+		nodemap[from].weight++;
 	}
 }
 
@@ -75,30 +74,59 @@ std::map<std::string, double> pagerank(std::vector<std::string> &nodelist,
 {
 	int n = nodelist.size();
 	double dfactor = 0.85;
-	int it = 100;
+	double stop = 0.001;
+	int max_it = 10;
 
+	/* Any initialization would work, since they all converge to the same value. */
 	std::map<std::string, double> prev_pagerank;
 	for (auto e : nodelist)
-		prev_pagerank[e] = 1 / n;
-	std::map<std::string, double> pagerank;
+		prev_pagerank[e] = 1.0 / n;
 
-	for (int i = 0; i < it; i++) {
+	/* Dangling nodes give their page rank to non-dangling ones. */
+	double prev_extra = 0.0;
+	for (std::string e : nodelist) {
+		if (!nodemap[e].weight)
+			prev_extra += prev_pagerank[e] / n;
+	}
+
+	bool convergence = false;
+	for (int i = 0; i < max_it && !convergence; i++) {
+		convergence = true;
+		std::map<std::string, double> pagerank;
+		double extra = 0.0;
+
 		/* For each node in the graph, we compute its new page rank by adding
 		 * the previous page rank of its incoming nodes divided by the weight of
 		 * each incoming node. */
-		for (int j = 0; j < nodelist.size(); j++) {
+		for (std::string code : nodelist) {
 			double pr = 0.0;
-			std::string code = nodelist[j];
 			Node e = nodemap[code];
-			for (int k = 0; k < e.incoming.size(); k++) {
-				std::string inc = e.incoming[k];
-				pr += prev_pagerank[inc] / nodemap[inc].weight;
+
+			for (auto k : e.incoming) {
+				std::string from = k.first;
+				int weight = k.second;
+				pr += prev_pagerank[from] * weight / nodemap[from].weight;
 			}
-			pagerank[code] = dfactor * pr + (1 - dfactor) / n;
+
+			pagerank[code] = dfactor * (pr + prev_extra) + (1.0 - dfactor) / n;
+			if (std::abs(pagerank[code] - prev_pagerank[code]) > stop)
+				convergence = false;
+			if (e.weight == 0)
+				extra += pagerank[code] / n;
 		}
+
 		prev_pagerank = pagerank;
+		prev_extra = extra;
 	}
-	return pagerank;
+	return prev_pagerank;
+}
+
+void print_pagerank(std::vector<std::string> &nodelist,
+					std::map<std::string, double> &pagerank)
+{
+	for (std::string code : nodelist) {
+		std::cout << "\e[91m" << code << ":\e[0m " << pagerank[code] << std::endl;
+	}
 }
 
 int main()
@@ -110,10 +138,7 @@ int main()
 	read_routes(nodelist, nodemap);
 
 	auto pr = pagerank(nodelist, nodemap);
-	for (int i = 0; i < nodelist.size(); i++) {
-		auto e = nodelist[i];
-		std::cout << e << ": " << pr[e] << std::endl;
-	}
+	print_pagerank(nodelist, pr);
 
 	return 0;
 }

@@ -93,7 +93,7 @@ void read_routes(std::vector<Node> &node_list,
 
 std::vector<double> pagerank(std::vector<Node> &node_list,
 							 std::tr1::unordered_map<std::string, int> &node_index,
-							 int &num_it)
+							 int &num_it, std::vector<int> &nodes_not_converged)
 {
 	int n = node_list.size();
 
@@ -108,10 +108,11 @@ std::vector<double> pagerank(std::vector<Node> &node_list,
 		if (!node_list[i].weight)
 			prev_extra += prev_pagerank[i] / n;
 
-	bool convergence = false;
+	/* Number of nodes that have yet to converge. */
+	int not_converged = n;
 	int i;
-	for (i = 0; i < MAX_ITERATIONS && !convergence; i++) {
-		convergence = true;
+	for (i = 0; i < MAX_ITERATIONS && not_converged; i++) {
+		not_converged = 0;
 		std::vector<double> pagerank(n);
 		double extra = 0.0;
 
@@ -131,7 +132,7 @@ std::vector<double> pagerank(std::vector<Node> &node_list,
 			/* The values will eventually converge. What we consider to be
 			 * sufficiently converged is up to us. */
 			if (std::abs(pagerank[e] - prev_pagerank[e]) > PRECISION)
-				convergence = false;
+				not_converged++;
 			/* Dangling nodes give their page rank to non-dangling ones. */
 			if (node_list[e].weight == 0)
 				extra += pagerank[e] / n;
@@ -139,6 +140,7 @@ std::vector<double> pagerank(std::vector<Node> &node_list,
 
 		prev_pagerank = pagerank;
 		prev_extra = extra;
+		nodes_not_converged.push_back(not_converged);
 	}
 	num_it = i;
 	return prev_pagerank;
@@ -164,11 +166,19 @@ int main()
 	read_routes(node_list, node_index);
 
 	int num_it;
-	auto pr = pagerank(node_list, node_index, num_it);
+	std::vector<int> not_converged;
+	auto pr = pagerank(node_list, node_index, num_it, not_converged);
 	print_pagerank(node_list, pr);
 
 	std::cout << std::endl;
 	std::cout << "\e[36mIterations" << ":\e[0m "<< num_it << std::endl;
+
+	std::cout << "\e[36mNodes yet to converge each iteration" << ":\e[0m "
+			  << std::endl;
+	for (int i = 0; i < not_converged.size(); i++) {
+		std::cout << " \e[32mIteration " << i << " \e[0m " << std::left
+				  << std::setw(7) << not_converged[i] << std::endl;
+	}
 
 	return 0;
 }

@@ -1,15 +1,17 @@
+#include <algorithm>
 #include <cstdlib>
 #include <fstream>
-#include <iostream>
-#include <tr1/unordered_map>
-#include <sstream>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
 #include <string>
+#include <tr1/unordered_map>
 #include <vector>
 
 constexpr int MAX_ITERATIONS = 100;
 constexpr double DFACTOR = 0.85;
 constexpr double PRECISION = 0.001;
+constexpr bool SORT = true;
 
 struct Node {
 	std::string code;
@@ -147,13 +149,23 @@ std::vector<double> pagerank(std::vector<Node> &node_list,
 }
 
 void print_pagerank(std::vector<Node> &node_list,
-					std::vector<double> &pagerank)
+					std::vector<double> &pagerank,
+					std::tr1::unordered_map<std::string, int> &node_index)
 {
-	for (int i = 0; i < node_list.size(); i++) {
-		auto e = node_list[i];
+	/* Sorts by pagerank score. The higher the index, the higher the score. */
+	auto pagerank_sort = [&pagerank, &node_index] (Node &n1, Node &n2) {
+		return pagerank[node_index[n1.code]] < pagerank[node_index[n2.code]];
+	};
+
+	if (SORT)
+		std::sort(node_list.begin(), node_list.end(), pagerank_sort);
+
+	for (auto e : node_list) {
+		/* We can't access the pagerank directly, since it could be sorted. */
+		int index = node_index[e.code];
 		std::cout << "\e[91m[" << e.code << "] \e[93m"
 				  << std::left << std::setw(80) << (e.name + "\e[0m ")
-				  << std::left << std::setw(0) << pagerank[i] << std::endl;
+				  << std::left << std::setw(0) << pagerank[index] << std::endl;
 	}
 }
 
@@ -168,7 +180,7 @@ int main()
 	int num_it;
 	std::vector<int> not_converged;
 	auto pr = pagerank(node_list, node_index, num_it, not_converged);
-	print_pagerank(node_list, pr);
+	print_pagerank(node_list, pr, node_index);
 
 	std::cout << std::endl;
 	std::cout << "\e[36mIterations" << ":\e[0m "<< num_it << std::endl;

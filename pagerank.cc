@@ -154,7 +154,7 @@ void print_pagerank(std::vector<Node> &node_list,
 {
 	/* Sorts by pagerank score. The higher the index, the higher the score. */
 	auto pagerank_sort = [&pagerank, &node_index] (Node &n1, Node &n2) {
-		return pagerank[node_index[n1.code]] < pagerank[node_index[n2.code]];
+		return pagerank[node_index[n1.code]] > pagerank[node_index[n2.code]];
 	};
 
 	if (SORT)

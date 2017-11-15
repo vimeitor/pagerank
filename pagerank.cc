@@ -173,7 +173,7 @@ int main()
 	std::cout << std::endl;
 	std::cout << "\e[36mIterations" << ":\e[0m "<< num_it << std::endl;
 
-	std::cout << "\e[36mNodes yet to converge each iteration" << ":\e[0m "
+	std::cout << "\e[36mNodes yet to converge after each iteration" << ":\e[0m "
 			  << std::endl;
 	for (int i = 0; i < not_converged.size(); i++) {
 		std::cout << " \e[32mIteration " << i << ":\e[0m " << std::left

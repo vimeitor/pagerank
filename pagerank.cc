@@ -43,7 +43,7 @@ void read_airports(std::vector<Node> &node_list,
 {
 	std::ifstream file("airports.txt");
 	if (!file) {
-		std::cout << "error: can't read airports" << std::endl;
+		std::cout << "\e[91merror:\e[0m can't read airports" << std::endl;
 		std::exit(1);
 	}
 
@@ -69,7 +69,7 @@ void read_routes(std::vector<Node> &node_list,
 {
 	std::ifstream file("routes.txt");
 	if (!file) {
-		std::cout << "error: can't read routes" << std::endl;
+		std::cout << "\e[91merror:\e[0m can't read routes" << std::endl;
 		std::exit(1);
 	}
 

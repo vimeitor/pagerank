@@ -3,6 +3,7 @@
 #include <iostream>
 #include <tr1/unordered_map>
 #include <sstream>
+#include <iomanip>
 #include <string>
 #include <vector>
 
@@ -148,8 +149,9 @@ void print_pagerank(std::vector<Node> &node_list,
 {
 	for (int i = 0; i < node_list.size(); i++) {
 		auto e = node_list[i];
-		std::cout << "\e[91m[" << e.code << "]\e[93m " << e.name <<
-			":\e[0m " << pagerank[i] << std::endl;
+		std::cout << "\e[91m[" << e.code << "] \e[93m"
+				  << std::left << std::setw(80) << (e.name + "\e[0m ")
+				  << std::left << std::setw(0) << pagerank[i] << std::endl;
 	}
 }
 

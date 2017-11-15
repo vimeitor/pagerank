@@ -24,10 +24,20 @@ void read_airports(std::vector<Node> &node_list,
 	std::string line;
 	while (std::getline(file, line)) {
 		std::vector<std::string> fields;
-		std::stringstream ss(line);
 		std::string field;
-		while (std::getline(ss, field, ','))
-			fields.push_back(field);
+		int comma = 0;
+		for (char c : line) {
+			if (comma > 4)
+				break;
+			if (c != ',')
+				field += c;
+			else {
+				fields.push_back(field);
+				field.clear();
+				comma++;
+			}
+		}
+		fields.push_back(field); /* Last string */
 
 		if (fields[4].length() != 5)
 			continue;
@@ -51,10 +61,20 @@ void read_routes(std::vector<Node> &node_list,
 	std::string line;
 	while (std::getline(file, line)) {
 		std::vector<std::string> fields;
-		std::stringstream ss(line);
 		std::string field;
-		while (std::getline(ss, field, ','))
-			fields.push_back(field);
+		int comma = 0;
+		for (char c : line) {
+			if (comma > 4)
+				break;
+			if (c != ',')
+				field += c;
+			else {
+				fields.push_back(field);
+				field.clear();
+				comma++;
+			}
+		}
+		fields.push_back(field); /* Last string */
 
 		std::string from = fields[2];
 		std::string to  = fields[4];

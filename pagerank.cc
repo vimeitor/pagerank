@@ -121,8 +121,11 @@ std::vector<double> pagerank(std::vector<Node> &node_list,
 			}
 
 			pagerank[e] = dfactor * (pr + prev_extra) + (1.0 - dfactor) / n;
+			/* The values will eventually converge. What we consider to be
+			 * sufficiently converged is up to us. */
 			if (std::abs(pagerank[e] - prev_pagerank[e]) > stop)
 				convergence = false;
+			/* Dangling nodes give their page rank to non-dangling ones. */
 			if (node_list[e].weight == 0)
 				extra += pagerank[e] / n;
 		}

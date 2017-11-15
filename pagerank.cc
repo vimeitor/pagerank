@@ -12,6 +12,7 @@ constexpr double PRECISION = 0.001;
 
 struct Node {
 	std::string code;
+	std::string name;
 	std::tr1::unordered_map<std::string, int> incoming;
 	int weight = 0;
 };
@@ -53,6 +54,8 @@ void read_airports(std::vector<Node> &node_list,
 
 		Node e;
 		e.code = fields[4].substr(1, fields[4].length() - 2);
+		e.name = fields[1].substr(1, fields[1].length() - 2) + " (" +
+			fields[3].substr(1, fields[3].length() - 2) + ")";
 		node_list.push_back(e);
 		node_index[e.code] = node_list.size() - 1;
 	}
@@ -144,7 +147,8 @@ void print_pagerank(std::vector<Node> &node_list,
 					std::vector<double> &pagerank)
 {
 	for (int i = 0; i < node_list.size(); i++) {
-		std::cout << "\e[91m" << node_list[i].code <<
+		auto e = node_list[i];
+		std::cout << "\e[91m[" << e.code << "]\e[93m " << e.name <<
 			":\e[0m " << pagerank[i] << std::endl;
 	}
 }
@@ -160,6 +164,9 @@ int main()
 	int num_it;
 	auto pr = pagerank(node_list, node_index, num_it);
 	print_pagerank(node_list, pr);
+
+	std::cout << std::endl;
+	std::cout << "\e[36mIterations" << ":\e[0m "<< num_it << std::endl;
 
 	return 0;
 }

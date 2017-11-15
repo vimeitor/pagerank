@@ -6,6 +6,10 @@
 #include <string>
 #include <vector>
 
+constexpr int MAX_ITERATIONS = 100;
+constexpr double DFACTOR = 0.85;
+constexpr double PRECISION = 0.001;
+
 struct Node {
 	std::string code;
 	std::tr1::unordered_map<std::string, int> incoming;
@@ -84,12 +88,10 @@ void read_routes(std::vector<Node> &node_list,
 }
 
 std::vector<double> pagerank(std::vector<Node> &node_list,
-							 std::tr1::unordered_map<std::string, int> &node_index)
+							 std::tr1::unordered_map<std::string, int> &node_index,
+							 int &num_it)
 {
 	int n = node_list.size();
-	double dfactor = 0.85;
-	double stop = 0.001;
-	int max_it = 10;
 
 	/* Any initialization would work, since they all converge to the same value. */
 	std::vector<double> prev_pagerank(n);
@@ -103,7 +105,8 @@ std::vector<double> pagerank(std::vector<Node> &node_list,
 			prev_extra += prev_pagerank[i] / n;
 
 	bool convergence = false;
-	for (int i = 0; i < max_it && !convergence; i++) {
+	int i;
+	for (i = 0; i < MAX_ITERATIONS && !convergence; i++) {
 		convergence = true;
 		std::vector<double> pagerank(n);
 		double extra = 0.0;
@@ -120,10 +123,10 @@ std::vector<double> pagerank(std::vector<Node> &node_list,
 				pr += prev_pagerank[node_index[from]] * from_weight / out;
 			}
 
-			pagerank[e] = dfactor * (pr + prev_extra) + (1.0 - dfactor) / n;
+			pagerank[e] = DFACTOR * (pr + prev_extra) + (1.0 - DFACTOR) / n;
 			/* The values will eventually converge. What we consider to be
 			 * sufficiently converged is up to us. */
-			if (std::abs(pagerank[e] - prev_pagerank[e]) > stop)
+			if (std::abs(pagerank[e] - prev_pagerank[e]) > PRECISION)
 				convergence = false;
 			/* Dangling nodes give their page rank to non-dangling ones. */
 			if (node_list[e].weight == 0)
@@ -133,6 +136,7 @@ std::vector<double> pagerank(std::vector<Node> &node_list,
 		prev_pagerank = pagerank;
 		prev_extra = extra;
 	}
+	num_it = i;
 	return prev_pagerank;
 }
 
@@ -153,7 +157,8 @@ int main()
 	read_airports(node_list, node_index);
 	read_routes(node_list, node_index);
 
-	auto pr = pagerank(node_list, node_index);
+	int num_it;
+	auto pr = pagerank(node_list, node_index, num_it);
 	print_pagerank(node_list, pr);
 
 	return 0;

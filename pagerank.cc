@@ -176,7 +176,7 @@ int main()
 	std::cout << "\e[36mNodes yet to converge each iteration" << ":\e[0m "
 			  << std::endl;
 	for (int i = 0; i < not_converged.size(); i++) {
-		std::cout << " \e[32mIteration " << i << " \e[0m " << std::left
+		std::cout << " \e[32mIteration " << i << ":\e[0m " << std::left
 				  << std::setw(7) << not_converged[i] << std::endl;
 	}
 

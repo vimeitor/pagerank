@@ -12,7 +12,7 @@ struct Node {
 	int weight = 0;
 };
 
-void read_airports(std::vector<Node> &nodelist,
+void read_airports(std::vector<Node> &node_list,
 				   std::tr1::unordered_map<std::string, int> &node_index)
 {
 	std::ifstream file("airports.txt");
@@ -34,12 +34,12 @@ void read_airports(std::vector<Node> &nodelist,
 
 		Node e;
 		e.code = fields[4].substr(1, fields[4].length() - 2);
-		nodelist.push_back(e);
-		node_index[e.code] = nodelist.size() - 1;
+		node_list.push_back(e);
+		node_index[e.code] = node_list.size() - 1;
 	}
 }
 
-void read_routes(std::vector<Node> &nodelist,
+void read_routes(std::vector<Node> &node_list,
 				 std::tr1::unordered_map<std::string, int> &node_index)
 {
 	std::ifstream file("routes.txt");
@@ -65,15 +65,15 @@ void read_routes(std::vector<Node> &nodelist,
 
 		int index_to = node_index[to];
 		int index_from = node_index[from];
-		nodelist[index_to].incoming[from]++;
-		nodelist[index_from].weight++;
+		node_list[index_to].incoming[from]++;
+		node_list[index_from].weight++;
 	}
 }
 
-std::vector<double> pagerank(std::vector<Node> &nodelist,
+std::vector<double> pagerank(std::vector<Node> &node_list,
 							 std::tr1::unordered_map<std::string, int> &node_index)
 {
-	int n = nodelist.size();
+	int n = node_list.size();
 	double dfactor = 0.85;
 	double stop = 0.001;
 	int max_it = 10;
@@ -85,8 +85,8 @@ std::vector<double> pagerank(std::vector<Node> &nodelist,
 
 	/* Dangling nodes give their page rank to non-dangling ones. */
 	double prev_extra = 0.0;
-	for (int i = 0; i < nodelist.size(); i++)
-		if (!nodelist[i].weight)
+	for (int i = 0; i < node_list.size(); i++)
+		if (!node_list[i].weight)
 			prev_extra += prev_pagerank[i] / n;
 
 	bool convergence = false;
@@ -98,19 +98,19 @@ std::vector<double> pagerank(std::vector<Node> &nodelist,
 		/* For each node in the graph, we compute its new page rank by adding
 		 * the previous page rank of its incoming nodes divided by the weight of
 		 * each incoming node. */
-		for (int e = 0; e < nodelist.size(); e++) {
+		for (int e = 0; e < node_list.size(); e++) {
 			double pr = 0.0;
-			for (auto k : nodelist[e].incoming) {
+			for (auto k : node_list[e].incoming) {
 				std::string from = k.first;
 				int from_weight = k.second;
-				int out = nodelist[node_index[from]].weight;
+				int out = node_list[node_index[from]].weight;
 				pr += prev_pagerank[node_index[from]] * from_weight / out;
 			}
 
 			pagerank[e] = dfactor * (pr + prev_extra) + (1.0 - dfactor) / n;
 			if (std::abs(pagerank[e] - prev_pagerank[e]) > stop)
 				convergence = false;
-			if (nodelist[e].weight == 0)
+			if (node_list[e].weight == 0)
 				extra += pagerank[e] / n;
 		}
 
@@ -120,25 +120,25 @@ std::vector<double> pagerank(std::vector<Node> &nodelist,
 	return prev_pagerank;
 }
 
-void print_pagerank(std::vector<Node> &nodelist,
+void print_pagerank(std::vector<Node> &node_list,
 					std::vector<double> &pagerank)
 {
-	for (int i = 0; i < nodelist.size(); i++) {
-		std::cout << "\e[91m" << nodelist[i].code <<
+	for (int i = 0; i < node_list.size(); i++) {
+		std::cout << "\e[91m" << node_list[i].code <<
 			":\e[0m " << pagerank[i] << std::endl;
 	}
 }
 
 int main()
 {
-	std::vector<Node> nodelist;
+	std::vector<Node> node_list;
 	std::tr1::unordered_map<std::string, int> node_index;
 
-	read_airports(nodelist, node_index);
-	read_routes(nodelist, node_index);
+	read_airports(node_list, node_index);
+	read_routes(node_list, node_index);
 
-	auto pr = pagerank(nodelist, node_index);
-	print_pagerank(nodelist, pr);
+	auto pr = pagerank(node_list, node_index);
+	print_pagerank(node_list, pr);
 
 	return 0;
 }

@@ -12,6 +12,24 @@ struct Node {
 	int weight = 0;
 };
 
+void parse_input(std::vector<std::string> &fields, std::string &line)
+{
+	std::string field;
+	int comma = 0;
+	for (char c : line) {
+		if (comma > 4)
+			break;
+		if (c != ',')
+			field += c;
+		else {
+			fields.push_back(field);
+			field.clear();
+			comma++;
+		}
+	}
+	fields.push_back(field);
+}
+
 void read_airports(std::vector<Node> &node_list,
 				   std::tr1::unordered_map<std::string, int> &node_index)
 {
@@ -24,20 +42,7 @@ void read_airports(std::vector<Node> &node_list,
 	std::string line;
 	while (std::getline(file, line)) {
 		std::vector<std::string> fields;
-		std::string field;
-		int comma = 0;
-		for (char c : line) {
-			if (comma > 4)
-				break;
-			if (c != ',')
-				field += c;
-			else {
-				fields.push_back(field);
-				field.clear();
-				comma++;
-			}
-		}
-		fields.push_back(field); /* Last string */
+		parse_input(fields, line);
 
 		if (fields[4].length() != 5)
 			continue;
@@ -62,19 +67,7 @@ void read_routes(std::vector<Node> &node_list,
 	while (std::getline(file, line)) {
 		std::vector<std::string> fields;
 		std::string field;
-		int comma = 0;
-		for (char c : line) {
-			if (comma > 4)
-				break;
-			if (c != ',')
-				field += c;
-			else {
-				fields.push_back(field);
-				field.clear();
-				comma++;
-			}
-		}
-		fields.push_back(field); /* Last string */
+		parse_input(fields, line);
 
 		std::string from = fields[2];
 		std::string to  = fields[4];

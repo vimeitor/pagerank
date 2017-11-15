@@ -1,18 +1,18 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <map>
+#include <tr1/unordered_map>
 #include <sstream>
 #include <string>
 #include <vector>
 
 struct Node {
-	std::map<std::string, int> incoming;
+	std::tr1::unordered_map<std::string, int> incoming;
 	int weight = 0;
 };
 
 void read_airports(std::vector<std::string> &nodelist,
-				   std::map<std::string, Node> &nodemap)
+				   std::tr1::unordered_map<std::string, Node> &nodemap)
 {
 	std::ifstream file("airports.txt");
 	if (!file) {
@@ -41,7 +41,7 @@ void read_airports(std::vector<std::string> &nodelist,
 }
 
 void read_routes(std::vector<std::string> &nodelist,
-				 std::map<std::string, Node> &nodemap)
+				 std::tr1::unordered_map<std::string, Node> &nodemap)
 {
 	std::ifstream file("routes.txt");
 	if (!file) {
@@ -69,8 +69,9 @@ void read_routes(std::vector<std::string> &nodelist,
 	}
 }
 
-std::map<std::string, double> pagerank(std::vector<std::string> &nodelist,
-									   std::map<std::string, Node> &nodemap)
+std::tr1::unordered_map<std::string, double>
+pagerank(std::vector<std::string> &nodelist,
+		 std::tr1::unordered_map<std::string, Node> &nodemap)
 {
 	int n = nodelist.size();
 	double dfactor = 0.85;
@@ -78,7 +79,7 @@ std::map<std::string, double> pagerank(std::vector<std::string> &nodelist,
 	int max_it = 10;
 
 	/* Any initialization would work, since they all converge to the same value. */
-	std::map<std::string, double> prev_pagerank;
+	std::tr1::unordered_map<std::string, double> prev_pagerank;
 	for (auto e : nodelist)
 		prev_pagerank[e] = 1.0 / n;
 
@@ -92,7 +93,7 @@ std::map<std::string, double> pagerank(std::vector<std::string> &nodelist,
 	bool convergence = false;
 	for (int i = 0; i < max_it && !convergence; i++) {
 		convergence = true;
-		std::map<std::string, double> pagerank;
+		std::tr1::unordered_map<std::string, double> pagerank;
 		double extra = 0.0;
 
 		/* For each node in the graph, we compute its new page rank by adding
@@ -122,7 +123,7 @@ std::map<std::string, double> pagerank(std::vector<std::string> &nodelist,
 }
 
 void print_pagerank(std::vector<std::string> &nodelist,
-					std::map<std::string, double> &pagerank)
+					std::tr1::unordered_map<std::string, double> &pagerank)
 {
 	for (std::string code : nodelist) {
 		std::cout << "\e[91m" << code << ":\e[0m " << pagerank[code] << std::endl;
@@ -132,7 +133,7 @@ void print_pagerank(std::vector<std::string> &nodelist,
 int main()
 {
 	std::vector<std::string> nodelist;
-	std::map<std::string, Node> nodemap;
+	std::tr1::unordered_map<std::string, Node> nodemap;
 
 	read_airports(nodelist, nodemap);
 	read_routes(nodelist, nodemap);
